@@ -1,0 +1,4 @@
+[submodule "submodules/tms-dbrepository-service"]
+	path = submodules/tms-dbrepository-service
+	url = https://github.com/satheeshchepuri/tms-dbrepository-service.git
+	branch = develop
