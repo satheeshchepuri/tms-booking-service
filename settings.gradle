@@ -1,0 +1,8 @@
+pluginManagement {
+	repositories {
+		gradlePluginPortal()
+	}
+}
+
+rootProject.name = 'tms-booking-service'
+include 'submodules:tms-dbrepository-service'

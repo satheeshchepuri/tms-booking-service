@@ -1,0 +1,136 @@
+buildscript {
+	repositories {
+	 mavenCentral()
+        dependencies {
+            classpath group: 'org.yaml', name: 'snakeyaml', version: '1.19'
+        }
+    }
+}
+
+plugins {
+	id 'org.springframework.boot' version '2.5.1'
+	id 'io.spring.dependency-management' version '1.0.11.RELEASE'	
+	id 'java'
+	id "org.sonarqube" version "2.7.1"
+	//id  "com.palantir.docker"
+}
+
+bootJar {
+	baseName = 'tms-booking-service'
+	version =  '0.1.0'
+}
+
+sonarqube {
+	properties {
+		property "sonar.projectName", "tms-booking-service"
+		property "sonar.projectKey", "cc:tms-booking-service"
+	}
+}
+
+repositories {
+   mavenCentral()
+}
+
+task unpack(type: Copy) {
+    dependsOn bootJar
+    from(zipTree(tasks.bootJar.outputs.files.singleFile))
+    into("build/dependency")
+}
+ext {
+    archive_basename = "tms-booking-service"
+    project_description = "TMS Booking Microservice"
+
+    // Jenkins/Environment Information
+    build_url = System.getenv('BUILD_URL') ?: "none"
+    build_by = System.getenv('NODE_NAME') ?: "none"
+    build_date = System.getenv('BUILD_TIMESTAMP') ?: "none"
+    build_system = System.getenv('JENKINS_HOME') ?: "none"
+    build_url = System.getenv('BUILD_URL') ?: "none"
+    build_user = System.getenv('USER') ?: "none"
+}
+apply plugin: 'jacoco'
+
+jacoco {
+        toolVersion = "0.8.3"
+        reportsDir = file("$buildDir/customJacocoReportDir")
+ }
+ 
+ jacocoTestCoverageVerification {
+        violationRules {
+            rule {
+                enabled = true
+                element = 'CLASS'
+                excludes = []
+            }
+        }
+    }
+ 
+def git_info = hasProperty('git_info') ? git_info : 'https://git.git/repo,00000000'
+def full_version = hasProperty('app_version') ? app_version : '0.0.0'
+group = 'com.tms'
+version = full_version
+archivesBaseName = ext.archive_basename
+
+sourceCompatibility = 1.8
+targetCompatibility = 1.8
+
+configurations {
+	developmentOnly
+	runtimeClasspath {
+		extendsFrom developmentOnly
+	}
+	compileOnly {
+		extendsFrom annotationProcessor
+	}
+}
+
+configurations.all {
+    resolutionStrategy {
+        force 'org.slf4j:slf4j-log4j12:1.5.8','org.slf4j:slf4j-api:1.5.8'
+    }
+}
+
+ check.dependsOn jacocoTestCoverageVerification
+ check.dependsOn jacocoTestReport
+
+test {
+	ignoreFailures = true
+ }
+
+dependencies {
+	implementation 'org.springframework.boot:spring-boot-starter-actuator'
+	implementation 'org.springframework.boot:spring-boot-starter-data-jpa'
+	implementation 'org.springframework.boot:spring-boot-starter-web'
+	implementation project(':submodules:tms-dbrepository-service')
+	developmentOnly 'org.springframework.boot:spring-boot-devtools'
+	
+	implementation 'io.springfox:springfox-swagger2:3.0.0'	
+	implementation 'io.springfox:springfox-swagger-ui:3.0.0'	
+	
+	runtimeOnly 'com.h2database:h2'	
+	compileOnly 'org.projectlombok:lombok:1.18.10'
+	annotationProcessor 'org.projectlombok:lombok:1.18.10'
+	
+	testImplementation 'org.springframework.boot:spring-boot-starter-test'	
+	
+}
+
+springBoot {
+	buildInfo {
+		properties {
+			artifact = archive_basename
+			version = full_version
+			group = group
+			name = project_description
+		        additional = [
+		                "title": project_description,
+		                "git-info": git_info,
+		                "build-url": build_url,
+		                "build-by": build_by,
+		                "build-date": build_date,
+		                "java-version": System.getProperty('java.version'),
+		                "gradle-version": project.gradle.gradleVersion
+			]
+		}
+	}
+}
